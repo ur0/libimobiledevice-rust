@@ -10,12 +10,12 @@ use libplist_sys::*;
 
 use std::collections::BTreeMap;
 
+use chrono::{DateTime, TimeZone, Timelike, UTC};
 use plist_crate::Plist;
-use chrono::{DateTime, UTC, TimeZone, Timelike};
 
-use internal::TIMESTAMP_OFFSET;
 use error::PlistError;
-use node::{Node, OwnedNode, BorrowedNode, FromPlistNode, ToPlistNode};
+use internal::TIMESTAMP_OFFSET;
+use node::{BorrowedNode, FromPlistNode, Node, OwnedNode, ToPlistNode};
 
 impl FromPlistNode for DateTime<UTC> {
     fn from_plist_node(node: &Node) -> Result<Self, PlistError> {
@@ -35,8 +35,20 @@ impl<T: TimeZone> ToPlistNode for DateTime<T> {
     }
 }
 
-generate_roundtrip_test!(test_date_roundtrip_after_2001, "2005-06-30T13:44:07.123456Z".parse::<DateTime<UTC>>().unwrap(), DateTime<UTC>);
-generate_roundtrip_test!(test_date_roundtrip_before_2001, "1952-12-04T23:59:59.999999Z".parse::<DateTime<UTC>>().unwrap(), DateTime<UTC>);
+generate_roundtrip_test!(
+    test_date_roundtrip_after_2001,
+    "2005-06-30T13:44:07.123456Z"
+        .parse::<DateTime<UTC>>()
+        .unwrap(),
+    DateTime<UTC>
+);
+generate_roundtrip_test!(
+    test_date_roundtrip_before_2001,
+    "1952-12-04T23:59:59.999999Z"
+        .parse::<DateTime<UTC>>()
+        .unwrap(),
+    DateTime<UTC>
+);
 
 impl FromPlistNode for Plist {
     fn from_plist_node(node: &Node) -> Result<Self, PlistError> {
@@ -69,13 +81,16 @@ impl ToPlistNode for Plist {
     }
 }
 
-generate_roundtrip_test!(test_composite_plist_node, Plist::Array(vec![
-    Plist::Boolean(true),
-    Plist::Date("2016-03-07T03:44:19Z".parse::<DateTime<UTC>>().unwrap()),
-    Plist::Dictionary(BTreeMap::new()),
-    Plist::Real(0.0),
-    Plist::Integer(-145),
-    Plist::Data(b"\x01\x23\0\0\xff".to_vec()),
-    Plist::String("abc\u{dddef}gh".to_owned()),
-]), Plist);
-
+generate_roundtrip_test!(
+    test_composite_plist_node,
+    Plist::Array(vec![
+        Plist::Boolean(true),
+        Plist::Date("2016-03-07T03:44:19Z".parse::<DateTime<UTC>>().unwrap()),
+        Plist::Dictionary(BTreeMap::new()),
+        Plist::Real(0.0),
+        Plist::Integer(-145),
+        Plist::Data(b"\x01\x23\0\0\xff".to_vec()),
+        Plist::String("abc\u{dddef}gh".to_owned()),
+    ]),
+    Plist
+);

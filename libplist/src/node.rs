@@ -10,21 +10,21 @@
 
 use libplist_sys::*;
 
-use libc::{c_void, c_double, c_char, free};
+use libc::{c_char, c_double, c_void, free};
 use mbox::{MBox, MString};
 
-use std::convert::{AsRef, AsMut};
+use std::borrow::{Borrow, BorrowMut, ToOwned};
+use std::convert::{AsMut, AsRef};
+use std::ffi::CStr;
+use std::fmt;
+use std::iter::{ExactSizeIterator, Extend, FromIterator, IntoIterator};
 use std::mem::forget;
 use std::ops::{Deref, DerefMut, Index};
-use std::iter::{IntoIterator, ExactSizeIterator, FromIterator, Extend};
-use std::borrow::{Borrow, BorrowMut, ToOwned};
-use std::ffi::CStr;
 use std::ptr::null_mut;
-use std::fmt;
 
+use c_str::ToCStr;
 use error::PlistError;
 use internal::recv_data;
-use c_str::ToCStr;
 
 //{{{ Node ----------------------------------------------------------------------------------------
 
@@ -34,16 +34,12 @@ pub struct Node(plist_private);
 impl Node {
     /// Obtains the parent of the node, if any.
     pub fn parent(&self) -> Option<&Node> {
-        unsafe {
-            Node::try_from_ptr(plist_get_parent(self.as_ptr()))
-        }
+        unsafe { Node::try_from_ptr(plist_get_parent(self.as_ptr())) }
     }
 
     /// Obtains the type of the node.
     pub fn node_type(&self) -> plist_type {
-        unsafe {
-            plist_get_node_type(self.as_ptr())
-        }
+        unsafe { plist_get_node_type(self.as_ptr()) }
     }
 
     /// Verifies that the node has the given type. If not, returns `Err(UnsupportedType)`.
@@ -103,50 +99,45 @@ impl OwnedNode {
 
     /// Creates an empty array.
     pub fn new_array() -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_array())
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_array()) }
     }
 
     /// Creates an empty dictionary.
     pub fn new_dict() -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_dict())
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_dict()) }
     }
 
     /// Creates an unsigned integer node.
     pub fn new_uint(value: u64) -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_uint(value))
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_uint(value)) }
     }
 
     /// Creates a string node.
     pub fn new_str(value: &CStr) -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_string(value.as_ptr()))
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_string(value.as_ptr())) }
     }
 
     /// Creates a new boolean node.
     pub fn new_bool(value: bool) -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_bool(if value { 1 } else { 0 }))
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_bool(if value { 1 } else { 0 })) }
     }
 
     /// Creates a new floating-point value node.
     pub fn new_real(value: c_double) -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_new_real(value))
-        }
+        unsafe { OwnedNode::from_ptr(plist_new_real(value)) }
     }
 
-    fn deserialize(data: &[u8], reader: unsafe extern fn(*const c_char, u32, *mut plist_t)) -> Option<OwnedNode> {
+    fn deserialize(
+        data: &[u8],
+        reader: unsafe extern "C" fn(*const c_char, u32, *mut plist_t),
+    ) -> Option<OwnedNode> {
         let mut output = null_mut();
         unsafe {
-            reader(data.as_ptr() as *const c_char, data.len() as u32, &mut output);
+            reader(
+                data.as_ptr() as *const c_char,
+                data.len() as u32,
+                &mut output,
+            );
             OwnedNode::try_from_ptr(output)
         }
     }
@@ -165,17 +156,13 @@ impl OwnedNode {
 impl Deref for OwnedNode {
     type Target = Node;
     fn deref(&self) -> &Node {
-        unsafe {
-            Node::from_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_ptr(self.as_ptr()) }
     }
 }
 
 impl DerefMut for OwnedNode {
     fn deref_mut(&mut self) -> &mut Node {
-        unsafe {
-            Node::from_mut_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_mut_ptr(self.as_ptr()) }
     }
 }
 
@@ -212,9 +199,7 @@ impl AsMut<Node> for OwnedNode {
 impl ToOwned for Node {
     type Owned = OwnedNode;
     fn to_owned(&self) -> OwnedNode {
-        unsafe {
-            OwnedNode::from_ptr(plist_copy(self.as_ptr()))
-        }
+        unsafe { OwnedNode::from_ptr(plist_copy(self.as_ptr())) }
     }
 }
 
@@ -330,7 +315,6 @@ mod node_tests {
         let _: &mut Node = n1.borrow_mut();
     }
 
-
     #[test]
     fn test_decode_from_invalid() {
         assert!(OwnedNode::from_xml("??").is_none());
@@ -363,7 +347,11 @@ impl Node {
     /// If this node is attached to an array, returns its corresponding index. Otherwise, returns
     /// None.
     pub fn get_index_in_array(&self) -> Option<usize> {
-        if self.parent().map(|p| p.node_type() == PLIST_ARRAY).unwrap_or(false) {
+        if self
+            .parent()
+            .map(|p| p.node_type() == PLIST_ARRAY)
+            .unwrap_or(false)
+        {
             Some(unsafe { plist_array_get_item_index(self.as_ptr()) as usize })
         } else {
             None
@@ -374,9 +362,7 @@ impl Node {
 impl ArrayNode {
     /// Length of the array.
     pub fn len(&self) -> usize {
-        unsafe {
-            plist_array_get_size(self.as_ptr()) as usize
-        }
+        unsafe { plist_array_get_size(self.as_ptr()) as usize }
     }
 
     /// Checks if the array is empty.
@@ -386,16 +372,12 @@ impl ArrayNode {
 
     /// Obtains a child of this array. Returns None if the index is out-of-bounds.
     pub fn get(&self, index: usize) -> Option<&Node> {
-        unsafe {
-            Node::try_from_ptr(plist_array_get_item(self.as_ptr(), index as u32))
-        }
+        unsafe { Node::try_from_ptr(plist_array_get_item(self.as_ptr(), index as u32)) }
     }
 
     /// Obtains a mutable child of this array. Returns None if the index is out-of-bounds.
     pub fn get_mut(&mut self, index: usize) -> Option<&mut Node> {
-        unsafe {
-            Node::try_from_mut_ptr(plist_array_get_item(self.as_ptr(), index as u32))
-        }
+        unsafe { Node::try_from_mut_ptr(plist_array_get_item(self.as_ptr(), index as u32)) }
     }
 
     /// Sets a child at a specified index. Crashes if the index is out of bounds.
@@ -479,7 +461,7 @@ impl<'a> IntoIterator for &'a ArrayNode {
 }
 
 impl Extend<OwnedNode> for ArrayNode {
-    fn extend<T: IntoIterator<Item=OwnedNode>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = OwnedNode>>(&mut self, iter: T) {
         for node in iter {
             self.push(node);
         }
@@ -487,7 +469,7 @@ impl Extend<OwnedNode> for ArrayNode {
 }
 
 impl FromIterator<OwnedNode> for OwnedNode {
-    fn from_iter<T: IntoIterator<Item=OwnedNode>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = OwnedNode>>(iter: T) -> Self {
         let mut result = OwnedNode::new_array();
         (|r: &mut Node| {
             let array = r.array_mut().unwrap();
@@ -557,10 +539,10 @@ mod array_tests {
 
         let a2 = array.iter().collect::<Vec<_>>();
 
-        assert_eq!(a2, vec![
-            &*OwnedNode::new_real(3.5),
-            &*OwnedNode::new_real(-3.5),
-        ]);
+        assert_eq!(
+            a2,
+            vec![&*OwnedNode::new_real(3.5), &*OwnedNode::new_real(-3.5)]
+        );
     }
 
     #[test]
@@ -569,15 +551,19 @@ mod array_tests {
             OwnedNode::new_uint(1),
             OwnedNode::new_uint(55),
             OwnedNode::new_uint(12),
-        ].into_iter().collect::<OwnedNode>();
+        ].into_iter()
+            .collect::<OwnedNode>();
         let array = node.array().unwrap();
 
         assert_eq!(array.len(), 3);
-        assert_eq!(array.iter().collect::<Vec<_>>(), vec![
-            &*OwnedNode::new_uint(1),
-            &*OwnedNode::new_uint(55),
-            &*OwnedNode::new_uint(12),
-        ]);
+        assert_eq!(
+            array.iter().collect::<Vec<_>>(),
+            vec![
+                &*OwnedNode::new_uint(1),
+                &*OwnedNode::new_uint(55),
+                &*OwnedNode::new_uint(12),
+            ]
+        );
     }
 
     #[test]
@@ -601,12 +587,19 @@ mod array_tests {
             inner.push(OwnedNode::new_uint(1));
         }
 
-        assert_eq!(outer, OwnedNode::from_xml("<plist><array><array><integer>1</integer></array></array></plist>").unwrap());
+        assert_eq!(
+            outer,
+            OwnedNode::from_xml(
+                "<plist><array><array><integer>1</integer></array></array></plist>"
+            ).unwrap()
+        );
     }
 
     #[test]
     fn test_mutation() {
-        let mut node = OwnedNode::from_xml("<plist><array><true/><false/><true/><integer>49</integer></array></plist>").unwrap();
+        let mut node = OwnedNode::from_xml(
+            "<plist><array><true/><false/><true/><integer>49</integer></array></plist>",
+        ).unwrap();
         {
             let mut array = node.array_mut().unwrap();
             array.set(1, OwnedNode::new_str(const_cstr!("foo").as_cstr()));
@@ -657,9 +650,7 @@ impl Node {
 impl DictNode {
     /// Length of the dictionary.
     pub fn len(&self) -> usize {
-        unsafe {
-            plist_dict_get_size(self.as_ptr()) as usize
-        }
+        unsafe { plist_dict_get_size(self.as_ptr()) as usize }
     }
 
     /// Checks if the dictionary is empty.
@@ -670,17 +661,13 @@ impl DictNode {
     /// Obtains the node associated with the specified key. Returns `None` if the entry does not
     /// exist.
     pub fn get(&self, key: &CStr) -> Option<&Node> {
-        unsafe {
-            Node::try_from_ptr(plist_dict_get_item(self.as_ptr(), key.as_ptr()))
-        }
+        unsafe { Node::try_from_ptr(plist_dict_get_item(self.as_ptr(), key.as_ptr())) }
     }
 
     /// Obtains a mutable node associated with the specified key. Returns `None` if the entry does
     /// not exist.
     pub fn get_mut(&mut self, key: &CStr) -> Option<&mut Node> {
-        unsafe {
-            Node::try_from_mut_ptr(plist_dict_get_item(self.as_ptr(), key.as_ptr()))
-        }
+        unsafe { Node::try_from_mut_ptr(plist_dict_get_item(self.as_ptr(), key.as_ptr())) }
     }
 
     /// Associates a child with the specified key in this dictionary.
@@ -799,7 +786,7 @@ impl<'a> IntoIterator for &'a mut DictNode {
 }
 
 impl<K: ToCStr> Extend<(K, OwnedNode)> for DictNode {
-    fn extend<T: IntoIterator<Item=(K, OwnedNode)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (K, OwnedNode)>>(&mut self, iter: T) {
         for (key, val) in iter {
             let cs = key.to_c_str().expect("invalid key for libplist");
             self.insert(&cs, val);
@@ -808,7 +795,7 @@ impl<K: ToCStr> Extend<(K, OwnedNode)> for DictNode {
 }
 
 impl<K: ToCStr> FromIterator<(K, OwnedNode)> for OwnedNode {
-    fn from_iter<T: IntoIterator<Item=(K, OwnedNode)>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = (K, OwnedNode)>>(iter: T) -> Self {
         let mut result = OwnedNode::new_dict();
         (|r: &mut Node| {
             let dict = r.dict_mut().unwrap();
@@ -857,34 +844,26 @@ unsafe impl BorrowedNode for DictNode {}
 impl Deref for ArrayNode {
     type Target = Node;
     fn deref(&self) -> &Node {
-        unsafe {
-            Node::from_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_ptr(self.as_ptr()) }
     }
 }
 
 impl DerefMut for ArrayNode {
     fn deref_mut(&mut self) -> &mut Node {
-        unsafe {
-            Node::from_mut_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_mut_ptr(self.as_ptr()) }
     }
 }
 
 impl Deref for DictNode {
     type Target = Node;
     fn deref(&self) -> &Node {
-        unsafe {
-            Node::from_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_ptr(self.as_ptr()) }
     }
 }
 
 impl DerefMut for DictNode {
     fn deref_mut(&mut self) -> &mut Node {
-        unsafe {
-            Node::from_mut_ptr(self.as_ptr())
-        }
+        unsafe { Node::from_mut_ptr(self.as_ptr()) }
     }
 }
 
@@ -895,8 +874,8 @@ impl DerefMut for DictNode {
 #[cfg(test)]
 mod dict_tests {
     use super::OwnedNode;
-    use std::collections::HashMap;
     use mbox::MString;
+    use std::collections::HashMap;
 
     #[test]
     fn test_simple_dict() {
@@ -914,10 +893,19 @@ mod dict_tests {
         assert_eq!(dict.len(), 2);
         assert!(!dict.is_empty());
 
-        assert_eq!(&dict[const_cstr!("one").as_cstr()], &*OwnedNode::new_uint(1));
-        assert_eq!(&dict[const_cstr!("yes").as_cstr()], &*OwnedNode::new_bool(true));
+        assert_eq!(
+            &dict[const_cstr!("one").as_cstr()],
+            &*OwnedNode::new_uint(1)
+        );
+        assert_eq!(
+            &dict[const_cstr!("yes").as_cstr()],
+            &*OwnedNode::new_bool(true)
+        );
 
-        assert_eq!(dict.get(const_cstr!("one").as_cstr()), Some(&*OwnedNode::new_uint(1)));
+        assert_eq!(
+            dict.get(const_cstr!("one").as_cstr()),
+            Some(&*OwnedNode::new_uint(1))
+        );
         assert_eq!(dict.get(const_cstr!("no").as_cstr()), None);
     }
 
@@ -961,13 +949,20 @@ mod dict_tests {
         let node = vec![
             ("foo", OwnedNode::new_bool(false)),
             ("bar", OwnedNode::new_bool(true)),
-        ].into_iter().collect::<OwnedNode>();
+        ].into_iter()
+            .collect::<OwnedNode>();
         let dict = node.dict().unwrap();
 
         assert_eq!(dict.len(), 2);
 
-        assert_eq!(&dict[const_cstr!("foo").as_cstr()], &*OwnedNode::new_bool(false));
-        assert_eq!(&dict[const_cstr!("bar").as_cstr()], &*OwnedNode::new_bool(true));
+        assert_eq!(
+            &dict[const_cstr!("foo").as_cstr()],
+            &*OwnedNode::new_bool(false)
+        );
+        assert_eq!(
+            &dict[const_cstr!("bar").as_cstr()],
+            &*OwnedNode::new_bool(true)
+        );
     }
 }
 
@@ -988,12 +983,12 @@ impl PartialEq for Node {
             (PLIST_DICT, PLIST_DICT) => {
                 let left_dict = self.dict().unwrap();
                 let right_dict = other.dict().unwrap();
-                left_dict.len() == right_dict.len() &&
-                        left_dict.iter().all(|(k, v)| right_dict.get(k.as_ref()) == Some(v))
+                left_dict.len() == right_dict.len()
+                    && left_dict
+                        .iter()
+                        .all(|(k, v)| right_dict.get(k.as_ref()) == Some(v))
             }
-            _ => unsafe {
-                plist_compare_node_value(self.as_ptr(), other.as_ptr()) != 0
-            }
+            _ => unsafe { plist_compare_node_value(self.as_ptr(), other.as_ptr()) != 0 },
         }
     }
 }
@@ -1027,4 +1022,3 @@ impl ToPlistNode for Node {
 }
 
 //}}}
-

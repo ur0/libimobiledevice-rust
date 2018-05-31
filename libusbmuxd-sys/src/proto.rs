@@ -76,4 +76,3 @@ pub struct usbmuxd_device_record {
     pub _padding: u16,
     pub location: u32,
 }
-

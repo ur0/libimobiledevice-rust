@@ -1,8 +1,8 @@
 //! Bindings to `lockdown.h`.
 
-use std::os::raw::{c_void, c_char, c_int};
-use idevice::{idevice_t};
+use idevice::idevice_t;
 use libplist_sys::plist_t;
+use std::os::raw::{c_char, c_int, c_void};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(i32)]
@@ -68,7 +68,8 @@ pub const LOCKDOWN_E_REMOVE_PROHIBITED: lockdownd_error_t = lockdownd_error_t::R
 pub const LOCKDOWN_E_IMMUTABLE_VALUE: lockdownd_error_t = lockdownd_error_t::ImmutableValue;
 pub const LOCKDOWN_E_PASSWORD_PROTECTED: lockdownd_error_t = lockdownd_error_t::PasswordProtected;
 pub const LOCKDOWN_E_USER_DENIED_PAIRING: lockdownd_error_t = lockdownd_error_t::UserDeniedPairing;
-pub const LOCKDOWN_E_PAIRING_DIALOG_RESPONSE_PENDING: lockdownd_error_t = lockdownd_error_t::PairingDialogResponsePending;
+pub const LOCKDOWN_E_PAIRING_DIALOG_RESPONSE_PENDING: lockdownd_error_t =
+    lockdownd_error_t::PairingDialogResponsePending;
 pub const LOCKDOWN_E_MISSING_HOST_ID: lockdownd_error_t = lockdownd_error_t::MissingHostId;
 pub const LOCKDOWN_E_INVALID_HOST_ID: lockdownd_error_t = lockdownd_error_t::InvalidHostId;
 pub const LOCKDOWN_E_SESSION_ACTIVE: lockdownd_error_t = lockdownd_error_t::SessionActive;
@@ -79,10 +80,13 @@ pub const LOCKDOWN_E_MISSING_SERVICE: lockdownd_error_t = lockdownd_error_t::Mis
 pub const LOCKDOWN_E_INVALID_SERVICE: lockdownd_error_t = lockdownd_error_t::InvalidService;
 pub const LOCKDOWN_E_SERVICE_LIMIT: lockdownd_error_t = lockdownd_error_t::ServiceLimit;
 pub const LOCKDOWN_E_MISSING_PAIR_RECORD: lockdownd_error_t = lockdownd_error_t::MissingPairRecord;
-pub const LOCKDOWN_E_SAVE_PAIR_RECORD_FAILED: lockdownd_error_t = lockdownd_error_t::SavePairRecordFailed;
+pub const LOCKDOWN_E_SAVE_PAIR_RECORD_FAILED: lockdownd_error_t =
+    lockdownd_error_t::SavePairRecordFailed;
 pub const LOCKDOWN_E_INVALID_PAIR_RECORD: lockdownd_error_t = lockdownd_error_t::InvalidPairRecord;
-pub const LOCKDOWN_E_INVALID_ACTIVATION_RECORD: lockdownd_error_t = lockdownd_error_t::InvalidActivationRecord;
-pub const LOCKDOWN_E_MISSING_ACTIVATION_RECORD: lockdownd_error_t = lockdownd_error_t::MissingActivationRecord;
+pub const LOCKDOWN_E_INVALID_ACTIVATION_RECORD: lockdownd_error_t =
+    lockdownd_error_t::InvalidActivationRecord;
+pub const LOCKDOWN_E_MISSING_ACTIVATION_RECORD: lockdownd_error_t =
+    lockdownd_error_t::MissingActivationRecord;
 pub const LOCKDOWN_E_SERVICE_PROHIBITED: lockdownd_error_t = lockdownd_error_t::ServiceProhibited;
 pub const LOCKDOWN_E_ESCROW_LOCKED: lockdownd_error_t = lockdownd_error_t::EscrowLocked;
 pub const LOCKDOWN_E_UNKNOWN_ERROR: lockdownd_error_t = lockdownd_error_t::UnknownError;
@@ -110,30 +114,85 @@ pub struct lockdownd_service_descriptor {
 pub type lockdownd_service_descriptor_t = *mut lockdownd_service_descriptor;
 
 extern "C" {
-    pub fn lockdownd_client_new(device: idevice_t, client: *mut lockdownd_client_t, label: *const c_char) -> lockdownd_error_t;
-    pub fn lockdownd_client_new_with_handshake(device: idevice_t, client: *mut lockdownd_client_t, label: *const c_char) -> lockdownd_error_t;
+    pub fn lockdownd_client_new(
+        device: idevice_t,
+        client: *mut lockdownd_client_t,
+        label: *const c_char,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_client_new_with_handshake(
+        device: idevice_t,
+        client: *mut lockdownd_client_t,
+        label: *const c_char,
+    ) -> lockdownd_error_t;
     pub fn lockdownd_client_free(client: lockdownd_client_t) -> lockdownd_error_t;
 
-    pub fn lockdownd_query_type(client: lockdownd_client_t, type_: *mut *mut c_char) -> lockdownd_error_t;
-    pub fn lockdownd_get_value(client: lockdownd_client_t, domain: *const c_char, key: *const c_char, value: *mut plist_t) -> lockdownd_error_t;
-    pub fn lockdownd_set_value(client: lockdownd_client_t, domain: *const c_char, key: *const c_char, value: plist_t) -> lockdownd_error_t;
-    pub fn lockdownd_remove_value(client: lockdownd_client_t, domain: *const c_char, key: *const c_char) -> lockdownd_error_t;
+    pub fn lockdownd_query_type(
+        client: lockdownd_client_t,
+        type_: *mut *mut c_char,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_get_value(
+        client: lockdownd_client_t,
+        domain: *const c_char,
+        key: *const c_char,
+        value: *mut plist_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_set_value(
+        client: lockdownd_client_t,
+        domain: *const c_char,
+        key: *const c_char,
+        value: plist_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_remove_value(
+        client: lockdownd_client_t,
+        domain: *const c_char,
+        key: *const c_char,
+    ) -> lockdownd_error_t;
 
-    pub fn lockdownd_start_service(client: lockdownd_client_t, identifier: *const c_char, service: *mut lockdownd_service_descriptor_t) -> lockdownd_error_t;
-    pub fn lockdownd_start_service_with_escrow_bag(client: lockdownd_client_t, identifier: *const c_char, service: *mut lockdownd_service_descriptor_t) -> lockdownd_error_t;
-    pub fn lockdownd_service_descriptor_free(service: lockdownd_service_descriptor_t) -> lockdownd_error_t;
+    pub fn lockdownd_start_service(
+        client: lockdownd_client_t,
+        identifier: *const c_char,
+        service: *mut lockdownd_service_descriptor_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_start_service_with_escrow_bag(
+        client: lockdownd_client_t,
+        identifier: *const c_char,
+        service: *mut lockdownd_service_descriptor_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_service_descriptor_free(
+        service: lockdownd_service_descriptor_t,
+    ) -> lockdownd_error_t;
 
-    pub fn lockdownd_start_session(client: lockdownd_client_t, host_id: *const c_char, session_id: *mut *mut c_char, ssl_enabled: *mut c_int) -> lockdownd_error_t;
-    pub fn lockdownd_stop_session(client: lockdownd_client_t, session_id: *const c_char) -> lockdownd_error_t;
+    pub fn lockdownd_start_session(
+        client: lockdownd_client_t,
+        host_id: *const c_char,
+        session_id: *mut *mut c_char,
+        ssl_enabled: *mut c_int,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_stop_session(
+        client: lockdownd_client_t,
+        session_id: *const c_char,
+    ) -> lockdownd_error_t;
 
     pub fn lockdownd_send(client: lockdownd_client_t, plist: plist_t) -> lockdownd_error_t;
     pub fn lockdownd_receive(client: lockdownd_client_t, plist: *mut plist_t) -> lockdownd_error_t;
 
-    pub fn lockdownd_pair(client: lockdownd_client_t, pair_record: lockdownd_pair_record_t) -> lockdownd_error_t;
-    pub fn lockdownd_validate_pair(client: lockdownd_client_t, pair_record: lockdownd_pair_record_t) -> lockdownd_error_t;
-    pub fn lockdownd_unpair(client: lockdownd_client_t, pair_record: lockdownd_pair_record_t) -> lockdownd_error_t;
+    pub fn lockdownd_pair(
+        client: lockdownd_client_t,
+        pair_record: lockdownd_pair_record_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_validate_pair(
+        client: lockdownd_client_t,
+        pair_record: lockdownd_pair_record_t,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_unpair(
+        client: lockdownd_client_t,
+        pair_record: lockdownd_pair_record_t,
+    ) -> lockdownd_error_t;
 
-    pub fn lockdownd_activate(client: lockdownd_client_t, activation_record: plist_t) -> lockdownd_error_t;
+    pub fn lockdownd_activate(
+        client: lockdownd_client_t,
+        activation_record: plist_t,
+    ) -> lockdownd_error_t;
     pub fn lockdownd_deactivate(client: lockdownd_client_t) -> lockdownd_error_t;
 
     pub fn lockdownd_enter_recovery(client: lockdownd_client_t) -> lockdownd_error_t;
@@ -142,11 +201,19 @@ extern "C" {
 
     pub fn lockdownd_client_set_label(client: lockdownd_client_t, label: *const c_char); // yes, returns void
 
-    pub fn lockdownd_get_device_udid(control: lockdownd_client_t, udid: *mut *mut c_char) -> lockdownd_error_t;
-    pub fn lockdownd_get_device_name(client: lockdownd_client_t, device_name: *mut *mut c_char) -> lockdownd_error_t;
+    pub fn lockdownd_get_device_udid(
+        control: lockdownd_client_t,
+        udid: *mut *mut c_char,
+    ) -> lockdownd_error_t;
+    pub fn lockdownd_get_device_name(
+        client: lockdownd_client_t,
+        device_name: *mut *mut c_char,
+    ) -> lockdownd_error_t;
 
-    pub fn lockdownd_get_sync_data_classes(client: lockdownd_client_t, classes: *mut *mut *mut c_char, count: *mut c_int) -> lockdownd_error_t;
+    pub fn lockdownd_get_sync_data_classes(
+        client: lockdownd_client_t,
+        classes: *mut *mut *mut c_char,
+        count: *mut c_int,
+    ) -> lockdownd_error_t;
     pub fn lockdownd_data_classes_free(client: lockdownd_client_t, classes: *mut *mut c_char);
 }
-
-

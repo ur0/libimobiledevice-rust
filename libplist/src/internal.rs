@@ -22,7 +22,7 @@ pub fn recv_data<T: AsPrim, F: FnOnce(*mut *mut c_char, *mut T)>(f: F) -> MBox<[
 #[cfg(test)]
 mod recv_data_tests {
     use super::recv_data;
-    use libc::{malloc, c_char};
+    use libc::{c_char, malloc};
     use std::ptr::copy_nonoverlapping;
 
     #[test]
@@ -49,6 +49,5 @@ macro_rules! generate_roundtrip_test {
             assert_eq!(b, original);
             assert_eq!(n, m);
         }
-    }
+    };
 }
-

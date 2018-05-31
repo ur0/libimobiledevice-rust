@@ -4,7 +4,7 @@
 
 pub mod proto;
 
-use std::os::raw::{c_int, c_uint, c_char, c_void, c_ushort};
+use std::os::raw::{c_char, c_int, c_uint, c_ushort, c_void};
 
 #[repr(C)]
 pub struct usbmuxd_device_info_t {
@@ -29,7 +29,8 @@ pub struct usbmuxd_event_t {
     pub device: usbmuxd_device_info_t,
 }
 
-pub type usbmuxd_event_cb_t = unsafe extern "C" fn(event: *const usbmuxd_event_t, user_data: *mut c_void);
+pub type usbmuxd_event_cb_t =
+    unsafe extern "C" fn(event: *const usbmuxd_event_t, user_data: *mut c_void);
 
 extern "C" {
     pub fn usbmuxd_subscribe(callback: usbmuxd_event_cb_t, user_data: *mut c_void) -> c_int;
@@ -38,19 +39,36 @@ extern "C" {
     pub fn usbmuxd_get_device_list(device_list: *mut *mut usbmuxd_device_info_t) -> c_int;
     pub fn usbmuxd_device_list_free(device_list: *mut *mut usbmuxd_device_info_t) -> c_int;
 
-    pub fn usbmuxd_get_device_by_udid(udid: *const c_char, device: *mut usbmuxd_device_info_t) -> c_int;
+    pub fn usbmuxd_get_device_by_udid(
+        udid: *const c_char,
+        device: *mut usbmuxd_device_info_t,
+    ) -> c_int;
 
     pub fn usbmuxd_connect(handle: c_int, tcp_port: c_ushort) -> c_int;
     pub fn usbmuxd_disconnect(sfd: c_int) -> c_int;
 
     pub fn usbmuxd_send(sfd: c_int, data: *const c_char, len: u32, sent_bytes: *mut u32) -> c_int;
-    pub fn usbmuxd_recv_timeout(sfd: c_int, data: *mut c_char, len: u32, recv_bytes: *mut u32, timeout: c_uint) -> c_int;
+    pub fn usbmuxd_recv_timeout(
+        sfd: c_int,
+        data: *mut c_char,
+        len: u32,
+        recv_bytes: *mut u32,
+        timeout: c_uint,
+    ) -> c_int;
     pub fn usbmuxd_recv(sfd: c_int, data: *mut c_char, len: u32, recv_bytes: *mut u32) -> c_int;
 
     pub fn usbmuxd_read_buid(buid: *mut *mut c_char) -> c_int;
 
-    pub fn usbmuxd_read_pair_record(record_id: *const c_char, record_data: *mut *mut c_char, record_size: *mut u32) -> c_int;
-    pub fn usbmuxd_save_pair_record(record_id: *const c_char, record_data: *const c_char, record_size: u32) -> c_int;
+    pub fn usbmuxd_read_pair_record(
+        record_id: *const c_char,
+        record_data: *mut *mut c_char,
+        record_size: *mut u32,
+    ) -> c_int;
+    pub fn usbmuxd_save_pair_record(
+        record_id: *const c_char,
+        record_data: *const c_char,
+        record_size: u32,
+    ) -> c_int;
     pub fn usbmuxd_delete_pair_record(record_id: *const c_char) -> c_int;
 
     pub fn libusbmuxd_set_use_inotify(set: c_int);
@@ -64,4 +82,3 @@ fn test_validity() {
         libusbmuxd_set_debug_level(0);
     }
 }
-

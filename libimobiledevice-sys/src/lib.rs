@@ -2,10 +2,10 @@
 
 extern crate libplist_sys;
 
-pub mod idevice;
-pub mod lockdown;
 pub mod afc;
 pub mod diagnostics_relay;
+pub mod idevice;
+pub mod lockdown;
 
 pub use idevice::*;
 
@@ -16,4 +16,3 @@ fn test_validity() {
         idevice_set_debug_level(0);
     }
 }
-

@@ -9,14 +9,16 @@
 use libplist_sys::*;
 
 use std::collections::HashMap;
+#[cfg(test)]
+use std::default::Default;
 use std::time::SystemTime;
-#[cfg(test)] use std::time::UNIX_EPOCH;
-#[cfg(test)] use std::default::Default;
+#[cfg(test)]
+use std::time::UNIX_EPOCH;
 
 use plist_rs_crate::Plist;
 
-use node::{FromPlistNode, ToPlistNode, Node, OwnedNode};
 use error::PlistError;
+use node::{FromPlistNode, Node, OwnedNode, ToPlistNode};
 
 impl FromPlistNode for Plist {
     fn from_plist_node(node: &Node) -> Result<Self, PlistError> {
@@ -49,13 +51,16 @@ impl ToPlistNode for Plist {
     }
 }
 
-generate_roundtrip_test!(test_composite_plist_node, Plist::Array(vec![
-    Plist::Boolean(true),
-    Plist::DateTime(UNIX_EPOCH),
-    Plist::Dict(HashMap::with_hasher(Default::default())),
-    Plist::Real(0.0),
-    Plist::Integer(-145),
-    Plist::Data(b"\x01\x23\0\0\xff".to_vec()),
-    Plist::String("abc\u{dddef}gh".to_owned()),
-]), Plist);
-
+generate_roundtrip_test!(
+    test_composite_plist_node,
+    Plist::Array(vec![
+        Plist::Boolean(true),
+        Plist::DateTime(UNIX_EPOCH),
+        Plist::Dict(HashMap::with_hasher(Default::default())),
+        Plist::Real(0.0),
+        Plist::Integer(-145),
+        Plist::Data(b"\x01\x23\0\0\xff".to_vec()),
+        Plist::String("abc\u{dddef}gh".to_owned()),
+    ]),
+    Plist
+);

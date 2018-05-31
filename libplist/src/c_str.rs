@@ -1,5 +1,5 @@
-use std::ffi::{CStr, CString, NulError};
 use std::borrow::Cow;
+use std::ffi::{CStr, CString, NulError};
 use std::ops::Deref;
 
 /// A convenient trait to return a `Cow<CStr>` from a string-like object. This
@@ -20,9 +20,11 @@ impl ToCStr for str {
     }
 }
 
-impl<R: Deref> ToCStr for R where R::Target: ToCStr {
+impl<R: Deref> ToCStr for R
+where
+    R::Target: ToCStr,
+{
     fn to_c_str(&self) -> Result<Cow<CStr>, NulError> {
         self.deref().to_c_str()
     }
 }
-

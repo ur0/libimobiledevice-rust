@@ -1,9 +1,9 @@
 //! Error types.
 
-use std::fmt;
-use std::error::Error;
-use std::str::Utf8Error;
 use std::convert::From;
+use std::error::Error;
+use std::fmt;
+use std::str::Utf8Error;
 
 use libplist_sys::plist_type;
 
@@ -36,9 +36,7 @@ impl Error for PlistError {
 impl fmt::Display for PlistError {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            PlistError::UnsupportedType(t) => {
-                writeln!(formatter, "unsupported plist type {:?}", t)
-            }
+            PlistError::UnsupportedType(t) => writeln!(formatter, "unsupported plist type {:?}", t),
             PlistError::Utf8(ref e) => e.fmt(formatter),
         }
     }
@@ -49,4 +47,3 @@ impl From<Utf8Error> for PlistError {
         PlistError::Utf8(e)
     }
 }
-

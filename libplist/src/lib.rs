@@ -67,25 +67,30 @@
 //!
 //! (Note that `plist` and `plist-rs` are mutually-exclusive since they have the same crate name.)
 
-extern crate libplist_sys;
-extern crate libc;
-extern crate mbox;
 extern crate asprim;
+extern crate libc;
+extern crate libplist_sys;
+extern crate mbox;
 
-#[cfg(test)] #[macro_use] extern crate const_cstr;
+#[cfg(test)]
+#[macro_use]
+extern crate const_cstr;
 
-#[cfg(feature="plist-interop")] extern crate plist as plist_crate;
-#[cfg(feature="plist-interop")] extern crate chrono;
-#[cfg(feature="plist-rs-interop")] extern crate plist as plist_rs_crate; // why are you called `plist` as well???
+#[cfg(feature = "plist-interop")]
+extern crate chrono;
+#[cfg(feature = "plist-interop")]
+extern crate plist as plist_crate;
+#[cfg(feature = "plist-rs-interop")]
+extern crate plist as plist_rs_crate; // why are you called `plist` as well???
 
-#[macro_use] mod internal;
+#[macro_use]
+mod internal;
 pub mod c_str;
-pub mod node;
 pub mod error;
 pub mod native;
+pub mod node;
 pub mod plist;
 pub mod plist_rs;
 
 pub use error::PlistError;
-pub use node::{Node, ArrayNode, DictNode, OwnedNode, FromPlistNode, ToPlistNode};
-
+pub use node::{ArrayNode, DictNode, FromPlistNode, Node, OwnedNode, ToPlistNode};

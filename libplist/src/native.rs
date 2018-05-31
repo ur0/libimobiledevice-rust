@@ -5,19 +5,19 @@
 use libplist_sys::*;
 use mbox::MString;
 
+use std::collections::{BTreeMap, HashMap};
 use std::default::Default;
-use std::ptr::null_mut;
-use std::collections::{HashMap, BTreeMap};
-use std::hash::{Hash, BuildHasher};
-use std::time::{UNIX_EPOCH, SystemTime, Duration};
 use std::ffi::{CStr, CString};
+use std::hash::{BuildHasher, Hash};
+use std::ptr::null_mut;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use libc::{c_double, c_char};
+use libc::{c_char, c_double};
 
-use node::{Node, OwnedNode, BorrowedNode, FromPlistNode, ToPlistNode};
+use c_str::ToCStr;
 use error::PlistError;
 use internal::{recv_data, TIMESTAMP_OFFSET};
-use c_str::ToCStr;
+use node::{BorrowedNode, FromPlistNode, Node, OwnedNode, ToPlistNode};
 
 //{{{ bool ----------------------------------------------------------------------------------------
 
@@ -160,8 +160,16 @@ impl<T: ToPlistNode> ToPlistNode for Vec<T> {
     }
 }
 
-generate_roundtrip_test!(test_array_of_bool_roundtrip, &[true, false] as &[bool], Vec<bool>);
-generate_roundtrip_test!(test_array_of_string_roundtrip, &["a", "b", "c"] as &[&'static str], Vec<String>);
+generate_roundtrip_test!(
+    test_array_of_bool_roundtrip,
+    &[true, false] as &[bool],
+    Vec<bool>
+);
+generate_roundtrip_test!(
+    test_array_of_string_roundtrip,
+    &["a", "b", "c"] as &[&'static str],
+    Vec<String>
+);
 generate_roundtrip_test!(test_empty_array_roundtrip, Vec::<u64>::new(), Vec<u64>);
 
 //}}}
@@ -169,7 +177,7 @@ generate_roundtrip_test!(test_empty_array_roundtrip, Vec::<u64>::new(), Vec<u64>
 //{{{ Dictionary ----------------------------------------------------------------------------------
 
 macro_rules! impl_from_plist_node_for_map {
-    (|$d:ident| $n:expr, $key_transform:expr) => {
+    (| $d:ident | $n:expr, $key_transform:expr) => {
         fn from_plist_node(node: &Node) -> Result<Self, PlistError> {
             let $d = try!(node.dict());
             let mut result = $n;
@@ -178,7 +186,7 @@ macro_rules! impl_from_plist_node_for_map {
             }
             Ok(result)
         }
-    }
+    };
 }
 
 impl<T: FromPlistNode> FromPlistNode for BTreeMap<MString, T> {
@@ -186,7 +194,10 @@ impl<T: FromPlistNode> FromPlistNode for BTreeMap<MString, T> {
 }
 
 impl<T: FromPlistNode, S: BuildHasher + Default> FromPlistNode for HashMap<MString, T, S> {
-    impl_from_plist_node_for_map!(|d| HashMap::with_capacity_and_hasher(d.len(), S::default()), |k| k);
+    impl_from_plist_node_for_map!(
+        |d| HashMap::with_capacity_and_hasher(d.len(), S::default()),
+        |k| k
+    );
 }
 
 impl<T: FromPlistNode> FromPlistNode for BTreeMap<String, T> {
@@ -194,7 +205,10 @@ impl<T: FromPlistNode> FromPlistNode for BTreeMap<String, T> {
 }
 
 impl<T: FromPlistNode, S: BuildHasher + Default> FromPlistNode for HashMap<String, T, S> {
-    impl_from_plist_node_for_map!(|d| HashMap::with_capacity_and_hasher(d.len(), S::default()), |k| (&k as &str).to_owned());
+    impl_from_plist_node_for_map!(
+        |d| HashMap::with_capacity_and_hasher(d.len(), S::default()),
+        |k| (&k as &str).to_owned()
+    );
 }
 
 impl<K: ToCStr, V: ToPlistNode> ToPlistNode for BTreeMap<K, V> {
@@ -244,7 +258,10 @@ impl FromPlistNode for Vec<u8> {
 impl ToPlistNode for [u8] {
     fn to_plist_node(&self) -> OwnedNode {
         unsafe {
-            OwnedNode::from_ptr(plist_new_data(self.as_ptr() as *const c_char, self.len() as u64))
+            OwnedNode::from_ptr(plist_new_data(
+                self.as_ptr() as *const c_char,
+                self.len() as u64,
+            ))
         }
     }
 }
@@ -272,7 +289,7 @@ impl FromPlistNode for SystemTime {
             let dur = Duration::new(sec as u64, usec as u32 * 1000);
             Ok(UNIX_EPOCH + dur)
         } else {
-            let dur = Duration::new((-sec-1) as u64, (1_000_000 - usec) as u32 * 1000);
+            let dur = Duration::new((-sec - 1) as u64, (1_000_000 - usec) as u32 * 1000);
             Ok(UNIX_EPOCH - dur)
         }
     }
@@ -286,7 +303,7 @@ impl ToPlistNode for SystemTime {
                 let neg_dur = e.duration();
                 match (neg_dur.as_secs() as i64, neg_dur.subsec_nanos()) {
                     (s, 0) => (-s, 0),
-                    (s, n) => (-s-1, 1_000_000_000 - n),
+                    (s, n) => (-s - 1, 1_000_000_000 - n),
                 }
             }
         };
@@ -298,15 +315,30 @@ impl ToPlistNode for SystemTime {
 }
 
 // ~2009 Feb 18th 23:33:20
-generate_roundtrip_test!(test_date_after_2001_roundtrip, UNIX_EPOCH + Duration::from_millis(1234567890123), SystemTime);
+generate_roundtrip_test!(
+    test_date_after_2001_roundtrip,
+    UNIX_EPOCH + Duration::from_millis(1234567890123),
+    SystemTime
+);
 
 // ~1973 Nov 30th 09:33:20
-generate_roundtrip_test!(test_date_after_1970_roundtrip, UNIX_EPOCH + Duration::from_millis(123456789012), SystemTime);
+generate_roundtrip_test!(
+    test_date_after_1970_roundtrip,
+    UNIX_EPOCH + Duration::from_millis(123456789012),
+    SystemTime
+);
 
 // ~1966 Feb 1st 14:26:40
-generate_roundtrip_test!(test_date_before_1970_roundtrip, UNIX_EPOCH - Duration::from_millis(123456789012), SystemTime);
-generate_roundtrip_test!(test_date_before_1970_round_secs_roundtrip, UNIX_EPOCH - Duration::from_secs(123456789), SystemTime);
-
+generate_roundtrip_test!(
+    test_date_before_1970_roundtrip,
+    UNIX_EPOCH - Duration::from_millis(123456789012),
+    SystemTime
+);
+generate_roundtrip_test!(
+    test_date_before_1970_round_secs_roundtrip,
+    UNIX_EPOCH - Duration::from_secs(123456789),
+    SystemTime
+);
 
 //}}}
 
@@ -329,4 +361,3 @@ impl<T: ToPlistNode + ?Sized> ToPlistNode for Box<T> {
         (**self).to_plist_node()
     }
 }
-

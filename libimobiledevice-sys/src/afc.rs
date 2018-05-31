@@ -3,7 +3,7 @@
 use idevice::idevice_t;
 use lockdown::lockdownd_service_descriptor_t;
 
-use std::os::raw::{c_char, c_void, c_int};
+use std::os::raw::{c_char, c_int, c_void};
 
 pub const AFC_SERVICE_NAME: &'static [u8] = b"com.apple.afc\0";
 pub const AFC2_SERVICE_NAME: &'static [u8] = b"com.apple.afc2\0";
@@ -118,54 +118,89 @@ pub struct afc_client_private(c_void);
 pub type afc_client_t = *mut afc_client_private;
 
 extern "C" {
-    pub fn afc_client_new(device: idevice_t, service: lockdownd_service_descriptor_t, client: *mut afc_client_t) -> afc_error_t;
-    pub fn afc_client_start_service(device: idevice_t, client: *mut afc_client_t, label: *const c_char) -> afc_error_t;
+    pub fn afc_client_new(
+        device: idevice_t,
+        service: lockdownd_service_descriptor_t,
+        client: *mut afc_client_t,
+    ) -> afc_error_t;
+    pub fn afc_client_start_service(
+        device: idevice_t,
+        client: *mut afc_client_t,
+        label: *const c_char,
+    ) -> afc_error_t;
     pub fn afc_client_free(client: afc_client_t) -> afc_error_t;
 
-    pub fn afc_get_device_info(client: afc_client_t, device_information: *mut *mut *mut c_char) -> afc_error_t;
-    pub fn afc_read_directory(client: afc_client_t, path: *const c_char, device_information: *mut *mut *mut c_char) -> afc_error_t;
-    pub fn afc_get_file_info(client: afc_client_t, filename: *const c_char, file_information: *mut *mut *mut c_char) -> afc_error_t;
+    pub fn afc_get_device_info(
+        client: afc_client_t,
+        device_information: *mut *mut *mut c_char,
+    ) -> afc_error_t;
+    pub fn afc_read_directory(
+        client: afc_client_t,
+        path: *const c_char,
+        device_information: *mut *mut *mut c_char,
+    ) -> afc_error_t;
+    pub fn afc_get_file_info(
+        client: afc_client_t,
+        filename: *const c_char,
+        file_information: *mut *mut *mut c_char,
+    ) -> afc_error_t;
     pub fn afc_dictionary_free(dictionary: *mut *mut c_char) -> afc_error_t;
 
-    pub fn afc_file_open(client: afc_client_t, filename: *const c_char, file_mode: afc_file_mode_t, handle: *mut u64) -> afc_error_t;
+    pub fn afc_file_open(
+        client: afc_client_t,
+        filename: *const c_char,
+        file_mode: afc_file_mode_t,
+        handle: *mut u64,
+    ) -> afc_error_t;
     pub fn afc_file_close(client: afc_client_t, handle: u64) -> afc_error_t;
-    pub fn afc_file_lock(client: afc_client_t, handle: u64, operation: afc_lock_op_t) -> afc_error_t;
-    pub fn afc_file_read(client: afc_client_t, handle: u64, data: *mut c_char, length: u32, bytes_read: *mut u32) -> afc_error_t;
-    pub fn afc_file_write(client: afc_client_t, handle: u64, data: *const c_char, length: u32, bytes_written: *mut u32) -> afc_error_t;
-    pub fn afc_file_seek(client: afc_client_t, handle: u64, offset: i64, whence: c_int) -> afc_error_t;
+    pub fn afc_file_lock(
+        client: afc_client_t,
+        handle: u64,
+        operation: afc_lock_op_t,
+    ) -> afc_error_t;
+    pub fn afc_file_read(
+        client: afc_client_t,
+        handle: u64,
+        data: *mut c_char,
+        length: u32,
+        bytes_read: *mut u32,
+    ) -> afc_error_t;
+    pub fn afc_file_write(
+        client: afc_client_t,
+        handle: u64,
+        data: *const c_char,
+        length: u32,
+        bytes_written: *mut u32,
+    ) -> afc_error_t;
+    pub fn afc_file_seek(
+        client: afc_client_t,
+        handle: u64,
+        offset: i64,
+        whence: c_int,
+    ) -> afc_error_t;
     pub fn afc_file_tell(client: afc_client_t, handle: u64, position: *mut u64) -> afc_error_t;
     pub fn afc_file_truncate(client: afc_client_t, handle: u64, newsize: u64) -> afc_error_t;
 
     pub fn afc_remove_path(client: afc_client_t, path: *const c_char) -> afc_error_t;
-    pub fn afc_rename_path(client: afc_client_t, from: *const c_char, to: *const c_char) -> afc_error_t;
+    pub fn afc_rename_path(
+        client: afc_client_t,
+        from: *const c_char,
+        to: *const c_char,
+    ) -> afc_error_t;
     pub fn afc_make_directory(client: afc_client_t, path: *const c_char) -> afc_error_t;
     pub fn afc_truncate(client: afc_client_t, path: *const c_char, newsize: u64) -> afc_error_t;
-    pub fn afc_make_link(client: afc_client_t, linktype: afc_link_type_t, target: *const c_char, linkname: *const c_char) -> afc_error_t;
+    pub fn afc_make_link(
+        client: afc_client_t,
+        linktype: afc_link_type_t,
+        target: *const c_char,
+        linkname: *const c_char,
+    ) -> afc_error_t;
     pub fn afc_set_file_time(client: afc_client_t, path: *const c_char, mtime: u64) -> afc_error_t;
     pub fn afc_remove_path_and_contents(client: afc_client_t, path: *const c_char) -> afc_error_t;
 
-    pub fn afc_get_device_info_key(client: afc_client_t, key: *const c_char, value: *mut *mut c_char) -> afc_error_t;
+    pub fn afc_get_device_info_key(
+        client: afc_client_t,
+        key: *const c_char,
+        value: *mut *mut c_char,
+    ) -> afc_error_t;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

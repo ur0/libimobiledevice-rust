@@ -10,7 +10,7 @@
 
 #![allow(non_camel_case_types)]
 
-use std::os::raw::{c_void, c_char, c_double};
+use std::os::raw::{c_char, c_double, c_void};
 
 #[repr(C)]
 #[doc(hidden)]
@@ -73,7 +73,7 @@ pub const PLIST_NONE: plist_type = plist_type::None;
 
 extern "C" {
 
-//{{{ Creation & Destruction ----------------------------------------------------------------------
+    //{{{ Creation & Destruction ----------------------------------------------------------------------
 
     pub fn plist_new_dict() -> plist_t;
     pub fn plist_new_array() -> plist_t;
@@ -87,9 +87,9 @@ extern "C" {
     pub fn plist_free(plist: plist_t);
     pub fn plist_copy(node: plist_t) -> plist_t;
 
-//}}}
+    //}}}
 
-//{{{ Array functions -----------------------------------------------------------------------------
+    //{{{ Array functions -----------------------------------------------------------------------------
 
     pub fn plist_array_get_size(node: plist_t) -> u32;
     pub fn plist_array_get_item(node: plist_t, n: u32) -> plist_t;
@@ -99,24 +99,29 @@ extern "C" {
     pub fn plist_array_insert_item(node: plist_t, item: plist_t, n: u32);
     pub fn plist_array_remove_item(node: plist_t, n: u32);
 
-//}}}
+    //}}}
 
-//{{{ Dictionary functions ------------------------------------------------------------------------
+    //{{{ Dictionary functions ------------------------------------------------------------------------
 
     pub fn plist_dict_get_size(node: plist_t) -> u32;
     pub fn plist_dict_new_iter(node: plist_t, iter: *mut plist_dict_iter);
-    pub fn plist_dict_next_item(node: plist_t, iter: plist_dict_iter, key: *mut *mut c_char, val: *mut plist_t);
+    pub fn plist_dict_next_item(
+        node: plist_t,
+        iter: plist_dict_iter,
+        key: *mut *mut c_char,
+        val: *mut plist_t,
+    );
     pub fn plist_dict_get_item_key(node: plist_t, key: *mut *mut c_char);
     pub fn plist_dict_get_item(node: plist_t, key: *const c_char) -> plist_t;
     pub fn plist_dict_set_item(node: plist_t, key: *const c_char, item: plist_t);
-    #[deprecated(since="1.11", note="use plist_dict_set_item instead")]
+    #[deprecated(since = "1.11", note = "use plist_dict_set_item instead")]
     pub fn plist_dict_insert_item(node: plist_t, key: *const c_char, item: plist_t);
     pub fn plist_dict_remove_item(node: plist_t, key: *const c_char);
     pub fn plist_dict_merge(target: *mut plist_t, source: plist_t);
 
-//}}}
+    //}}}
 
-//{{{ Getters -------------------------------------------------------------------------------------
+    //{{{ Getters -------------------------------------------------------------------------------------
 
     pub fn plist_get_parent(node: plist_t) -> plist_t;
     pub fn plist_get_node_type(node: plist_t) -> plist_type;
@@ -129,9 +134,9 @@ extern "C" {
     pub fn plist_get_date_val(node: plist_t, sec: *mut i32, usec: *mut i32);
     pub fn plist_get_uid_val(node: plist_t, val: *mut u64);
 
-//}}}
+    //}}}
 
-//{{{ Setters -------------------------------------------------------------------------------------
+    //{{{ Setters -------------------------------------------------------------------------------------
 
     pub fn plist_set_type(node: plist_t, type_: plist_type);
     pub fn plist_set_key_val(node: plist_t, val: *const c_char);
@@ -143,18 +148,18 @@ extern "C" {
     pub fn plist_set_date_val(node: plist_t, sec: i32, usec: i32);
     pub fn plist_set_uid_val(node: plist_t, val: u64);
 
-//}}}
+    //}}}
 
-//{{{ Import and Export ---------------------------------------------------------------------------
+    //{{{ Import and Export ---------------------------------------------------------------------------
 
     pub fn plist_to_xml(plist: plist_t, plist_xml: *mut *mut c_char, length: *mut u32);
     pub fn plist_to_bin(plist: plist_t, plist_bin: *mut *mut c_char, length: *mut u32);
     pub fn plist_from_xml(plist_xml: *const c_char, length: u32, plist: *mut plist_t);
     pub fn plist_from_bin(plist_bin: *const c_char, length: u32, plist: *mut plist_t);
 
-//}}}
+    //}}}
 
-//{{{ Utils ---------------------------------------------------------------------------------------
+    //{{{ Utils ---------------------------------------------------------------------------------------
 
     pub fn plist_access_path(plist: plist_t, length: u32, ...) -> plist_t;
     //pub fn plist_access_pathv(plist: plist_t, length: u32, v: VaList) -> plist_t;
@@ -176,5 +181,3 @@ fn test_validity() {
         plist_free(plist);
     }
 }
-
-
