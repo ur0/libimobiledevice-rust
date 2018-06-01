@@ -34,4 +34,5 @@ extern "C" {
         callback: *const c_void,
         callback_data: *const c_void,
     ) -> instproxy_error_t;
+    pub fn instproxy_client_options_free(opts: plist_t);
 }
